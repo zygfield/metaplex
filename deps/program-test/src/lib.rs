@@ -164,6 +164,82 @@ pub fn builtin_process_instruction(
     Ok(())
 }
 
+pub type ProcessInstructionWithLifetime<'a> =
+    fn(program_id: &'a Pubkey, accounts: &'a [AccountInfo<'a>], input: &[u8]) -> ProgramResult;
+
+/// Adapted from the above [builtin_process_instruction] except that the `process_instruction`
+/// function signature includes a lifetime.
+/// Additionally `accounts` and `account_infos` need to be provided and mutated instead of
+/// created inside the function in order for their lifetimes to match.
+pub fn builtin_process_instruction_with_lifetime<'a>(
+    process_instruction: ProcessInstructionWithLifetime<'a>,
+    program_id: &'a Pubkey,
+    input: &[u8],
+    invoke_context: &'a mut dyn InvokeContext,
+    accounts: &'a mut HashMap<Pubkey, Account>,
+    account_infos: &'a mut Vec<AccountInfo<'a>>,
+) -> Result<(), InstructionError> {
+    set_invoke_context(invoke_context);
+
+    let keyed_accounts = invoke_context.get_keyed_accounts()?;
+
+    // Copy all the accounts into a HashMap to ensure there are no duplicates
+    for ka in keyed_accounts {
+        accounts.insert(
+            *ka.unsigned_key(),
+            Account::from(ka.account.borrow().clone()),
+        );
+    }
+
+    // Create shared references to each account's lamports/data/owner
+    let account_refs: HashMap<_, _> = accounts
+        .iter_mut()
+        .map(|(key, account)| {
+            (
+                *key,
+                (
+                    Rc::new(RefCell::new(&mut account.lamports)),
+                    Rc::new(RefCell::new(&mut account.data[..])),
+                    &account.owner,
+                ),
+            )
+        })
+        .collect();
+
+    // Create AccountInfos
+    for keyed_account in keyed_accounts {
+        let account_info = {
+            let key = keyed_account.unsigned_key();
+            let (lamports, data, owner) = &account_refs[key];
+            AccountInfo {
+                key,
+                is_signer: keyed_account.signer_key().is_some(),
+                is_writable: keyed_account.is_writable(),
+                lamports: lamports.clone(),
+                data: data.clone(),
+                owner,
+                executable: keyed_account.executable().unwrap(),
+                rent_epoch: keyed_account.rent_epoch().unwrap(),
+            }
+        };
+        account_infos.push(account_info);
+    }
+
+    // Execute the program
+    process_instruction(program_id, account_infos, input).map_err(u64::from)?;
+
+    // Commit AccountInfo changes back into KeyedAccounts
+    for keyed_account in keyed_accounts {
+        let mut account = keyed_account.account.borrow_mut();
+        let key = keyed_account.unsigned_key();
+        let (lamports, data, _owner) = &account_refs[key];
+        account.set_lamports(**lamports.borrow());
+        account.set_data(data.borrow().to_vec());
+    }
+
+    Ok(())
+}
+
 /// Converts a `solana-program`-style entrypoint into the runtime's entrypoint style, for
 /// use with `ProgramTest::add_program`
 #[macro_export]
