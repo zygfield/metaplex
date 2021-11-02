@@ -1,25 +1,58 @@
 mod assert;
+mod custom_process_instruction;
 mod edition_marker;
 mod external_price;
 mod master_edition_v2;
 mod metadata;
 mod vault;
 
+use std::collections::HashMap;
+
 pub use assert::*;
 pub use edition_marker::EditionMarker;
 pub use external_price::ExternalPrice;
 pub use master_edition_v2::MasterEditionV2;
 pub use metadata::Metadata;
+use metaplex_token_metadata::processor::process_instruction;
+use solana_program::account_info::AccountInfo;
 use solana_program_test::*;
 use solana_sdk::{
-    account::Account, program_pack::Pack, pubkey::Pubkey, signature::Signer,
-    signer::keypair::Keypair, system_instruction, transaction::Transaction, transport,
+    account::Account, process_instruction::InvokeContext, program_pack::Pack, pubkey::Pubkey,
+    signature::Signer, signer::keypair::Keypair, system_instruction, transaction::Transaction,
+    transport,
 };
 use spl_token::state::Mint;
 pub use vault::Vault;
 
+use crate::utils::custom_process_instruction::custom_builtin_process_instruction;
+
 pub fn program_test<'a>() -> ProgramTest {
-    ProgramTest::new("metaplex_token_metadata", metaplex_token_metadata::id(), None)
+    ProgramTest::new(
+        "metaplex_token_metadata",
+        metaplex_token_metadata::id(),
+        None,
+    )
+}
+
+pub fn program_test_with_instruction<'a>() -> ProgramTest {
+    ProgramTest::new(
+        "metaplex_token_metadata",
+        metaplex_token_metadata::id(),
+        Some(
+            |program_id: &Pubkey, input: &[u8], invoke_context: &mut dyn InvokeContext| {
+                let accounts: &mut HashMap<Pubkey, Account> = &mut HashMap::new();
+                let account_infos: &mut Vec<AccountInfo> = &mut vec![];
+                custom_builtin_process_instruction(
+                    process_instruction,
+                    program_id,
+                    input,
+                    invoke_context,
+                    accounts,
+                    account_infos,
+                )
+            },
+        ),
+    )
 }
 
 pub async fn get_account(context: &mut ProgramTestContext, pubkey: &Pubkey) -> Account {
