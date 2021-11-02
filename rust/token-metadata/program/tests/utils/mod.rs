@@ -1,5 +1,4 @@
 mod assert;
-mod custom_process_instruction;
 mod edition_marker;
 mod external_price;
 mod master_edition_v2;
@@ -24,8 +23,6 @@ use solana_sdk::{
 use spl_token::state::Mint;
 pub use vault::Vault;
 
-use crate::utils::custom_process_instruction::custom_builtin_process_instruction;
-
 pub fn program_test<'a>() -> ProgramTest {
     ProgramTest::new(
         "metaplex_token_metadata",
@@ -42,7 +39,7 @@ pub fn program_test_with_instruction<'a>() -> ProgramTest {
             |program_id: &Pubkey, input: &[u8], invoke_context: &mut dyn InvokeContext| {
                 let accounts: &mut HashMap<Pubkey, Account> = &mut HashMap::new();
                 let account_infos: &mut Vec<AccountInfo> = &mut vec![];
-                custom_builtin_process_instruction(
+                builtin_process_instruction_with_lifetime(
                     process_instruction,
                     program_id,
                     input,
@@ -84,10 +81,18 @@ pub async fn mint_tokens(
 
     let tx = Transaction::new_signed_with_payer(
         &[
+            // Create Mint Token Instruction with:
+            //   * Single authority
+            //   0. `[writable]` The mint.
+            //   1. `[writable]` The account to mint tokens to.
+            //   2. `[signer]` The mint's minting authority.
+            // The amount of new tokens to mint.
             spl_token::instruction::mint_to(&spl_token::id(), mint, account, owner, &[], amount)
                 .unwrap(),
         ],
+        // payer
         Some(&context.payer.pubkey()),
+        // signing keypairs
         &signing_keypairs,
         context.last_blockhash,
     );
@@ -105,6 +110,11 @@ pub async fn create_token_account(
 
     let tx = Transaction::new_signed_with_payer(
         &[
+            // Create Token account with:
+            //   0. [WRITE, SIGNER] Funding account
+            //   1. [WRITE, SIGNER] New account
+            // - space+rent:  Token Account state
+            // - owned by Token Program
             system_instruction::create_account(
                 &context.payer.pubkey(),
                 &account.pubkey(),
@@ -112,6 +122,10 @@ pub async fn create_token_account(
                 spl_token::state::Account::LEN as u64,
                 &spl_token::id(),
             ),
+            // Init account with:
+            //   - 0. `[writable]`  The account to initialize.
+            //   - 1. `[]` The mint this account will be associated with.
+            //   - 2. `[]` The new account's owner/multisignature.
             spl_token::instruction::initialize_account(
                 &spl_token::id(),
                 &account.pubkey(),
@@ -120,7 +134,9 @@ pub async fn create_token_account(
             )
             .unwrap(),
         ],
+        // payer
         Some(&context.payer.pubkey()),
+        // signing keypairs
         &[&context.payer, &account],
         context.last_blockhash,
     );
@@ -138,6 +154,9 @@ pub async fn create_mint(
 
     let tx = Transaction::new_signed_with_payer(
         &[
+            // Create token mint account with:
+            // - space+rent: Token Mint state
+            // - owned by Token Program
             system_instruction::create_account(
                 &context.payer.pubkey(),
                 &mint.pubkey(),
@@ -145,6 +164,9 @@ pub async fn create_mint(
                 spl_token::state::Mint::LEN as u64,
                 &spl_token::id(),
             ),
+            // Mint token with:
+            // - manager as mint authority
+            // - freeze authority
             spl_token::instruction::initialize_mint(
                 &spl_token::id(),
                 &mint.pubkey(),
@@ -154,7 +176,9 @@ pub async fn create_mint(
             )
             .unwrap(),
         ],
+        // payer
         Some(&context.payer.pubkey()),
+        // signing keypairs
         &[&context.payer, &mint],
         context.last_blockhash,
     );

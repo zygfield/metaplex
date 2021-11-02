@@ -1799,7 +1799,7 @@ dependencies = [
  "num-derive",
  "num-traits",
  "solana-program",
- "solana-program-test",
+ "solana-program-test 1.7.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "solana-sdk",
  "spl-token",
  "thiserror",
@@ -1864,7 +1864,7 @@ dependencies = [
  "num-derive",
  "num-traits",
  "solana-program",
- "solana-program-test",
+ "solana-program-test 1.7.11",
  "solana-sdk",
  "spl-token",
  "thiserror",
@@ -3368,6 +3368,30 @@ dependencies = [
  "solana-logger",
  "solana-sdk-macro",
  "thiserror",
+]
+
+[[package]]
+name = "solana-program-test"
+version = "1.7.11"
+dependencies = [
+ "async-trait",
+ "base64 0.12.3",
+ "bincode",
+ "chrono",
+ "chrono-humanize",
+ "log",
+ "mio",
+ "serde",
+ "serde_derive",
+ "solana-banks-client",
+ "solana-banks-server",
+ "solana-bpf-loader-program",
+ "solana-logger",
+ "solana-runtime",
+ "solana-sdk",
+ "solana-vote-program",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
