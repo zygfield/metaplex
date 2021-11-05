@@ -1,5 +1,5 @@
 import './App.css';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import Home from './Home';
 
@@ -20,8 +20,16 @@ import {
 import { WalletDialogProvider } from '@solana/wallet-adapter-material-ui';
 import { ThemeProvider, createTheme } from '@material-ui/core';
 import { ConfettiProvider } from './confetti';
+import '@fontsource/lato/300.css';
+import '@fontsource/lato/400.css';
+import '@fontsource/lato/700.css';
+import '@fontsource/lato/900.css';
+
 
 const theme = createTheme({
+  typography: {
+    fontFamily: 'Lato, Arial',
+  },
   palette: {
     type: 'dark',
   },
@@ -52,12 +60,79 @@ const App = () => {
     [],
   );
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef(new Image())
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    let observer: ResizeObserver;
+
+    if(canvas) {
+      const context = canvas.getContext('2d');
+      if(context) {
+        const render = () => {
+          const dpr = window.devicePixelRatio || 1;
+          const rect = canvas.getBoundingClientRect(); // css
+          canvas.width = rect.width * dpr;
+          canvas.height = rect.height * dpr;
+          context.scale(dpr, dpr);
+          context.fillStyle = '#000000'
+          context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+
+
+
+          const imageHeight = imageRef.current.height;
+          const imageWidth = imageRef.current.width;
+
+          if (imageHeight === 0 || imageWidth === 0) {
+            return;
+          }
+
+          const height = Math.ceil(canvas.height / imageHeight);
+          const width = Math.ceil(canvas.width / imageWidth);
+
+          for (let i = 0; i < width; i++) {
+            for (let j= 0; j< height; j++) {
+              context.save();
+              context.translate(i * imageWidth, j * imageHeight);
+              if(j % 2 === 1) {
+                context.translate(0, imageHeight);
+                context.scale(1, -1);
+              }
+              if(i % 2 === 1) {
+                context.translate(imageWidth, 0);
+                context.scale(-1, 1);
+              }
+              context.drawImage(imageRef.current, 0, 0, imageWidth, imageHeight);
+              context.restore();
+            }
+          }
+        };
+
+        imageRef.current.onload = render;
+        imageRef.current.src = 'bg.png';
+
+        observer = new ResizeObserver(render);
+
+        let root= window.document.getElementById('root');
+        if(root) {
+          observer.observe(root);
+        }
+      }
+    }
+
+    return () => {
+      observer?.disconnect();
+    };
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect>
           <WalletDialogProvider>
             <ConfettiProvider>
+              <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }} />
               <Home
                 candyMachineId={candyMachineId}
                 fairLaunchId={fairLaunchId}
