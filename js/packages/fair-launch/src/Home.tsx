@@ -552,30 +552,6 @@ const Home = (props: HomeProps) => {
 
   return (
     <Container disableGutters>
-      {/* <AppBar position="static" elevation={0} style={{ marginBottom: 50, background: 'transparent' }}>
-        <Toolbar>
-          <Typography variant="h6" style={{ fontWeight: 900, fontSize: 24, color: 'black', flexGrow: 1 }}>
-            #theRealLitJesus
-          </Typography>
-
-          <IconButton
-            edge="end"
-            color="inherit"
-            onClick={() => window.open('https://github.com/metaplex-foundation/metaplex', '_blank')}
-          >
-            <GitHubIcon />
-          </IconButton>
-          <IconButton
-            edge="end"
-            color="inherit"
-            onClick={() => window.open('https://twitter.com/therealLitJesus', '_blank')}
-          >
-            <TwitterIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar> */}
-
-
       <div className="main" >
         <div className="left" style={{ position: 'relative' }}>
         <div
@@ -1180,7 +1156,7 @@ const Home = (props: HomeProps) => {
                 <Typography
                   variant="h6"
                   color="textPrimary"
-                  style={{ fontWeight: 'bold', color: 'black' }}
+                  style={{ fontWeight: 'bold', color: 'var(--text-color)' }}
                 >
                   ◎{' '}
                   {formatNumber.format(

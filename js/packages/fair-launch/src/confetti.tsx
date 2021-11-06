@@ -42,7 +42,7 @@ export const ConfettiProvider = ({ children = null as any }) => {
   }, []);
 
   const canvasStyle: React.CSSProperties = {
-    width: '100vw',
+    width: '100%',
     height: '100vh',
     position: 'absolute',
     zIndex: 1,

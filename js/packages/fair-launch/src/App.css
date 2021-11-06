@@ -91,7 +91,7 @@
 
 .right img {
   filter: drop-shadow(3px 4px 6px rgba(0, 0, 0, 0.25));
-  border: 5px solid #D7D7D7;
+  border: 5px solid #E3E4D3;
 }
 
 .header {
@@ -133,7 +133,6 @@
     width: 100%;
     float: left;
     max-width: 400px; /* The width is 20%, by default */
-    --text-color: black;
     --secondary-text-color: #585858;
     background: transparent;
     margin-bottom: 0px;
