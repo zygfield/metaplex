@@ -89,19 +89,23 @@
   margin-right: -15%;
 }
 
-.right video {
+.right img {
   filter: drop-shadow(3px 4px 6px rgba(0, 0, 0, 0.25));
   border: 5px solid #D7D7D7;
 }
 
 .header {
   position: relative;
-  margin-bottom: 50px;
+  margin: 50px 20px;
   display: flex;
   flex-direction: column;
   align-content: center;
   justify-content: center;
   align-items: center;
+}
+
+.header svg {
+  max-width: 1200px;
 }
 
 .header span {
