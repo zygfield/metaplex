@@ -76,10 +76,28 @@ const App = () => {
           canvas.width = rect.width * dpr;
           canvas.height = rect.height * dpr;
           context.scale(dpr, dpr);
-          context.fillStyle = '#000000'
+          context.fillStyle = '#2D1428'
           context.fillRect(0, 0, context.canvas.width, context.canvas.height)
 
+          // const cx = Math.max(context.canvas.width, context.canvas.height) / 2
 
+          // var grad = context.createRadialGradient(cx, cx, 0, cx, cx, 316.23);
+
+          // grad.addColorStop(0.24, 'rgba(45, 20, 40, 1)');
+          // grad.addColorStop(0.96, 'rgba(0, 0, 0, 1)');
+
+          // context.fillStyle = grad;
+          // context.fillRect(0,0,context.canvas.width, context.canvas.height);
+
+          for (var i = 0; i < 1000; i++) {
+            const x = Math.random() * canvas.offsetWidth;
+            const y = Math.random() * canvas.offsetHeight;
+            const radius = Math.random() * 1.2;
+            context.beginPath();
+            context.arc(x, y, radius, 0, 360);
+            context.fillStyle = "hsla(60,100%,50%,0.3)";
+            context.fill();
+          }
 
           const imageHeight = imageRef.current.height;
           const imageWidth = imageRef.current.width;
