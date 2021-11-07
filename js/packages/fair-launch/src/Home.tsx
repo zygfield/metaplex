@@ -368,7 +368,7 @@ const Home = (props: HomeProps) => {
         let currentAmount = (
             state.state.currentMedian || state.state.data.priceRangeStart
           ).toNumber() / LAMPORTS_PER_SOL;
-        let adjusted = (currentAmount * 1.25) - (currentAmount * 1.4) % (state.state.data.tickSize.toNumber() / LAMPORTS_PER_SOL);
+        let adjusted = (currentAmount * 1.25) - (currentAmount * 1.25) % (state.state.data.tickSize.toNumber() / LAMPORTS_PER_SOL);
 
         setContributed(
           getPhase(state, undefined) === Phase.Phase1 ?
