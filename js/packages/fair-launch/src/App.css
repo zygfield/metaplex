@@ -3,15 +3,12 @@
 }
 
 #root {
-
-
   max-width: 100vw;
   overflow: hidden;
 }
 
 .left {
   max-width: 100%;
-  background: black;
   --text-color: white;
   --secondary-text-color: lightgrey;
   margin-bottom: 24px;
