@@ -78,10 +78,6 @@ programCommand('upload')
   )
   .option('--no-retain-authority', 'Do not retain authority to update metadata')
   .option('--no-mutable', 'Metadata will not be editable')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (files: string[], options, cmd) => {
     const {
       number,
@@ -186,10 +182,6 @@ programCommand('withdraw')
   )
   .option('-ch, --charity <string>', 'Which charity?', '')
   .option('-cp, --charityPercent <string>', 'Which percent to charity?', '0')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (directory, cmd) => {
     const { keypair, env, dry, charity, charityPercent, rpcUrl } = cmd.opts();
     if (charityPercent < 0 || charityPercent > 100) {
@@ -299,10 +291,6 @@ programCommand('verify_token_metadata')
   });
 
 programCommand('verify')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (directory, cmd) => {
     const { env, keypair, rpcUrl, cacheName } = cmd.opts();
 
@@ -478,10 +466,6 @@ programCommand('verify')
 programCommand('verify_price')
   .option('-p, --price <string>')
   .option('--cache-path <string>')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (directory, cmd) => {
     const { keypair, env, price, cacheName, rpcUrl, cachePath } = cmd.opts();
     const lamports = parsePrice(price);
@@ -523,10 +507,6 @@ programCommand('verify_price')
 
 programCommand('show')
   .option('--cache-path <string>')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (directory, cmd) => {
     const { keypair, env, cacheName, rpcUrl, cachePath } = cmd.opts();
 
@@ -627,10 +607,6 @@ programCommand('create_candy_machine')
   .option(
     '-s, --sol-treasury-account <string>',
     'SOL account that receives mint payments.',
-  )
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
   )
   .action(async (directory, cmd) => {
     const {
@@ -745,10 +721,6 @@ programCommand('update_candy_machine')
     'timestamp - eg "04 Dec 1995 00:12:00 GMT" or "now"',
   )
   .option('-p, --price <string>', 'SOL price')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .option('--new-authority <Pubkey>', 'New Authority. Base58-encoded')
   .action(async (directory, cmd) => {
     const { keypair, env, date, rpcUrl, price, newAuthority, cacheName } =
@@ -803,10 +775,6 @@ programCommand('update_candy_machine')
   });
 
 programCommand('mint_one_token')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (directory, cmd) => {
     const { keypair, env, cacheName, rpcUrl } = cmd.opts();
 
@@ -849,10 +817,6 @@ programCommand('mint_tokens')
 programCommand('sign')
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   .option('-m, --metadata <string>', 'base58 metadata account id')
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (directory, cmd) => {
     const { keypair, env, rpcUrl, metadata } = cmd.opts();
 
@@ -862,10 +826,6 @@ programCommand('sign')
 programCommand('sign_all')
   .option('-b, --batch-size <string>', 'Batch size', '10')
   .option('-d, --daemon', 'Run signing continuously', false)
-  .option(
-    '-r, --rpc-url <string>',
-    'custom rpc url since this is a heavy command',
-  )
   .action(async (directory, cmd) => {
     const { keypair, env, cacheName, rpcUrl, batchSize, daemon } = cmd.opts();
     const cacheContent = loadCache(cacheName, env);
@@ -980,6 +940,10 @@ function programCommand(name: string) {
       '-k, --keypair <path>',
       `Solana wallet location`,
       '--keypair not provided',
+    )
+    .option(
+      '-r, --rpc-url <string>',
+      'custom rpc url since this is a heavy command',
     )
     .option('-l, --log-level <string>', 'log level', setLogLevel)
     .option('-c, --cache-name <string>', 'Cache file name', 'temp');
