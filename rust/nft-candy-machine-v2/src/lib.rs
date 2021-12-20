@@ -27,7 +27,7 @@ use {
     spl_token::state::Mint,
     std::{cell::RefMut, ops::Deref, str::FromStr},
 };
-anchor_lang::declare_id!("cndy3Z4yapfJBmL3ShUp5exZKqR3z33thTzeNMm2gRZ");
+anchor_lang::declare_id!("BbcWYvfLAzWS2FL4sXmzbVAcC9Hn5pKjCx5WLyYmRh5t");
 
 const PREFIX: &str = "candy_machine";
 #[program]
@@ -104,7 +104,7 @@ pub mod nft_candy_machine_v2 {
             let whitelist_token_account = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
             // If the user has not actually made this account,
-            // this explodes and wej ust check normal dates.
+            // this explodes and we just check normal dates.
             // If they have, we check amount, if it's > 0 we let them use the lkogic
             // if 0, check normal dates.
             match assert_is_ata(whitelist_token_account, &payer.key(), &ws.mint) {
@@ -417,6 +417,13 @@ pub mod nft_candy_machine_v2 {
             return Err(ErrorCode::HiddenSettingsConfigsDoNotHaveConfigLines.into());
         }
 
+        let mut config_line_size: usize = CONFIG_LINE_SIZE;
+        let mut max_uri_length: usize = MAX_URI_LENGTH;
+        if let Some(max_len) = candy_machine.data.max_uri_root_len {
+            max_uri_length = max_len as usize;
+            config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + (max_len as usize);
+        }
+
         for line in &config_lines {
             let mut array_of_zeroes = vec![];
             while array_of_zeroes.len() < MAX_NAME_LENGTH - line.name.len() {
@@ -424,28 +431,29 @@ pub mod nft_candy_machine_v2 {
             }
             let name = line.name.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
 
+            // Max URI length is 200 so no risk here.
+            let uri_len: u8 = line.uri.len() as u8;
             let mut array_of_zeroes = vec![];
-            while array_of_zeroes.len() < MAX_URI_LENGTH - line.uri.len() {
+            while array_of_zeroes.len() < max_uri_length - line.uri.len() {
                 array_of_zeroes.push(0u8);
             }
             let uri = line.uri.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
-            fixed_config_lines.push(ConfigLine { name, uri })
+            fixed_config_lines.push(ConfigLine { name, uri, uri_len })
         }
 
         let as_vec = fixed_config_lines.try_to_vec()?;
         // remove unneeded u32 because we're just gonna edit the u32 at the front
         let serialized: &[u8] = &as_vec.as_slice()[4..];
 
-        let position = CONFIG_ARRAY_START + 4 + (index as usize) * CONFIG_LINE_SIZE;
+        let position = CONFIG_ARRAY_START + 4 + (index as usize) * config_line_size;
 
         let array_slice: &mut [u8] =
-            &mut data[position..position + fixed_config_lines.len() * CONFIG_LINE_SIZE];
+            &mut data[position..position + fixed_config_lines.len() * config_line_size];
 
         array_slice.copy_from_slice(serialized);
-
         let bit_mask_vec_start = CONFIG_ARRAY_START
             + 4
-            + (candy_machine.data.items_available as usize) * CONFIG_LINE_SIZE
+            + (candy_machine.data.items_available as usize) * config_line_size
             + 4;
 
         let mut new_count = current_count;
@@ -495,7 +503,14 @@ pub mod nft_candy_machine_v2 {
         data: CandyMachineData,
     ) -> ProgramResult {
         let candy_machine_account = &mut ctx.accounts.candy_machine;
+        let mut config_line_size: usize = CONFIG_LINE_SIZE;
+        if let Some(max_len) = data.max_uri_root_len {
+            config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + max_len as usize;
+        }
 
+        if config_line_size > CONFIG_LINE_SIZE {
+            return Err(ErrorCode::UriCombinedMaxLengthMustBeUnder200.into());
+        }
         if data.uuid.len() != 6 {
             return Err(ErrorCode::UuidMustBeExactly6Length.into());
         }
@@ -531,6 +546,21 @@ pub mod nft_candy_machine_v2 {
         let new_symbol =
             candy_machine.data.symbol.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
         candy_machine.data.symbol = new_symbol;
+        let mut array_of_zeroes = vec![];
+        while array_of_zeroes.len() < MAX_URI_LENGTH - candy_machine.data.uri_prefix.len() {
+            array_of_zeroes.push(0u8);
+        }
+        let new_uri_prefix =
+            candy_machine.data.uri_prefix.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
+        candy_machine.data.uri_prefix = new_uri_prefix;
+
+        let mut array_of_zeroes = vec![];
+        while array_of_zeroes.len() < MAX_URI_LENGTH - candy_machine.data.uri_suffix.len() {
+            array_of_zeroes.push(0u8);
+        }
+        let new_uri_suffix =
+            candy_machine.data.uri_suffix.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
+        candy_machine.data.uri_suffix = new_uri_suffix;
 
         // - 1 because we are going to be a creator
         if candy_machine.data.creators.len() > MAX_CREATOR_LIMIT - 1 {
@@ -547,7 +577,7 @@ pub mod nft_candy_machine_v2 {
 
         let vec_start = CONFIG_ARRAY_START
             + 4
-            + (candy_machine.data.items_available as usize) * CONFIG_LINE_SIZE;
+            + (candy_machine.data.items_available as usize) * config_line_size;
         let as_bytes = (candy_machine
             .data
             .items_available
@@ -594,9 +624,13 @@ fn get_space_for_candy(data: CandyMachineData) -> core::result::Result<usize, Pr
     let num = if data.hidden_settings.is_some() {
         CONFIG_ARRAY_START
     } else {
+        let mut config_line_size = CONFIG_LINE_SIZE;
+        if let Some(max_len) = data.max_uri_root_len {
+            config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + max_len as usize;
+        }
         CONFIG_ARRAY_START
             + 4
-            + (data.items_available as usize) * CONFIG_LINE_SIZE
+            + (data.items_available as usize) * config_line_size
             + 8
             + 2 * ((data
                 .items_available
@@ -741,6 +775,13 @@ pub struct CandyMachineData {
     pub hidden_settings: Option<HiddenSettings>,
     pub whitelist_mint_settings: Option<WhitelistMintSettings>,
     pub items_available: u64,
+    // Can't use .len() since we pad with null.
+    pub uri_prefix_len: Option<u8>,
+    pub uri_prefix: String,
+    pub max_uri_root_len: Option<u8>,
+    // Can't use .len() since we pad with null.
+    pub uri_suffix_len: Option<u8>,
+    pub uri_suffix: String,
     /// If [`Some`] requires gateway tokens on mint
     pub gatekeeper: Option<GatekeeperConfig>,
 }
@@ -793,6 +834,11 @@ pub const CONFIG_ARRAY_START: usize = 8 + // key
 1 + // allow presale
 9 + // discount price
 32 + // mint key for whitelist
+2 + // optional uri_prefix_len
+4 + MAX_URI_LENGTH + // uri prefix
+2 + // optional uri_suffix_len
+2 + // optional uri_root_len
+4 + MAX_URI_LENGTH + // uri suffix
 1 + 32 + 1 // gatekeeper
 ;
 
@@ -812,13 +858,14 @@ pub fn get_good_index(
     items_available: usize,
     index: usize,
     pos: bool,
+    config_line_size: usize,
 ) -> core::result::Result<(usize, bool), ProgramError> {
     let mut index_to_use = index;
     let mut taken = 1;
     let mut found = false;
     let bit_mask_vec_start = CONFIG_ARRAY_START
         + 4
-        + (items_available) * CONFIG_LINE_SIZE
+        + (items_available) * config_line_size
         + 4
         + items_available
             .checked_div(8)
@@ -892,34 +939,52 @@ pub fn get_config_line<'info>(
         return Ok(ConfigLine {
             name: hs.name.clone() + "#" + &(mint_number + 1).to_string(),
             uri: hs.uri.clone(),
+            uri_len: 200,
         });
     }
     msg!("Index is set to {:?}", index);
     let a_info = a.to_account_info();
 
     let mut arr = a_info.data.borrow_mut();
-
-    let (mut index_to_use, good) =
-        get_good_index(&mut arr, a.data.items_available as usize, index, true)?;
-    if !good {
-        let (index_to_use_new, good_new) =
-            get_good_index(&mut arr, a.data.items_available as usize, index, false)?;
-        index_to_use = index_to_use_new;
-        if !good_new {
-            return Err(ErrorCode::CannotFindUsableConfigLine.into());
-        }
+    let mut config_line_size: usize = CONFIG_LINE_SIZE;
+    let mut max_uri_length: usize = MAX_URI_LENGTH;
+    if let Some(max_len) = a.data.max_uri_root_len {
+        max_uri_length = max_len as usize;
+        config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + max_len as usize;
     }
+    // let (mut index_to_use, good) = get_good_index(
+    //     &mut arr,
+    //     a.data.items_available as usize,
+    //     index,
+    //     true,
+    //     config_line_size,
+    // )?;
+    // if !good {
+    //     let (index_to_use_new, good_new) = get_good_index(
+    //         &mut arr,
+    //         a.data.items_available as usize,
+    //         index,
+    //         false,
+    //         config_line_size,
+    //     )?;
+    //     index_to_use = index_to_use_new;
+    //     if !good_new {
+    //         return Err(ErrorCode::CannotFindUsableConfigLine.into());
+    //     }
+    // }
+    let index_to_use = index;
 
     msg!(
         "Index actually ends up due to used bools {:?}",
         index_to_use
     );
-    if arr[CONFIG_ARRAY_START + 4 + index_to_use * (CONFIG_LINE_SIZE)] == 1 {
+
+    if arr[CONFIG_ARRAY_START + 4 + index_to_use * (config_line_size)] == 1 {
         return Err(ErrorCode::CannotFindUsableConfigLine.into());
     }
 
-    let data_array = &mut arr[CONFIG_ARRAY_START + 4 + index_to_use * (CONFIG_LINE_SIZE)
-        ..CONFIG_ARRAY_START + 4 + (index_to_use + 1) * (CONFIG_LINE_SIZE)];
+    let data_array = &mut arr[CONFIG_ARRAY_START + 4 + index_to_use * (config_line_size)
+        ..CONFIG_ARRAY_START + 4 + (index_to_use + 1) * (config_line_size)];
 
     let mut name_vec = vec![];
     let mut uri_vec = vec![];
@@ -929,32 +994,51 @@ pub fn get_config_line<'info>(
         }
         name_vec.push(data_array[i])
     }
-    for i in 8 + MAX_NAME_LENGTH..8 + MAX_NAME_LENGTH + MAX_URI_LENGTH {
+
+    for i in 8 + MAX_NAME_LENGTH..8 + MAX_NAME_LENGTH + max_uri_length {
         if data_array[i] == 0 {
             break;
         }
         uri_vec.push(data_array[i])
+    }
+    let mut uri = String::from("");
+    if max_uri_length < MAX_URI_LENGTH {
+        if let Some(prefix_len) = a.data.uri_prefix_len {
+            uri.push_str(&a.data.uri_prefix.clone().as_str()[..prefix_len as usize]);
+        }
+        let uri_root = match String::from_utf8(uri_vec) {
+            Ok(val) => String::from(val),
+            Err(_) => return Err(ErrorCode::InvalidString.into()),
+        };
+        uri.push_str(&uri_root.as_str()[0..data_array[data_array.len() - 1] as usize]);
+        if let Some(suffix_len) = a.data.uri_suffix_len {
+            uri.push_str(&a.data.uri_suffix.clone().as_str()[..suffix_len as usize]);
+        }
+    } else {
+        uri = match String::from_utf8(uri_vec) {
+            Ok(val) => val,
+            Err(_) => return Err(ErrorCode::InvalidString.into()),
+        };
     }
     let config_line: ConfigLine = ConfigLine {
         name: match String::from_utf8(name_vec) {
             Ok(val) => val,
             Err(_) => return Err(ErrorCode::InvalidString.into()),
         },
-        uri: match String::from_utf8(uri_vec) {
-            Ok(val) => val,
-            Err(_) => return Err(ErrorCode::InvalidString.into()),
-        },
+        uri: uri,
+        uri_len: data_array[data_array.len() - 1],
     };
 
     Ok(config_line)
 }
 
-pub const CONFIG_LINE_SIZE: usize = 4 + MAX_NAME_LENGTH + 4 + MAX_URI_LENGTH;
+pub const CONFIG_LINE_SIZE: usize = 4 + MAX_NAME_LENGTH + 4 + MAX_URI_LENGTH + 1;
 #[derive(AnchorSerialize, AnchorDeserialize, Debug)]
 pub struct ConfigLine {
     pub name: String,
     /// URI pointing to JSON representing the asset
     pub uri: String,
+    pub uri_len: u8,
 }
 
 // Unfortunate duplication of token metadata so that IDL picks it up.
@@ -1017,4 +1101,6 @@ pub enum ErrorCode {
     InvalidString,
     #[msg("Suspicious transaction detected")]
     SuspiciousTransaction,
+    #[msg("Combined URI prefix, suffix, and max_uri_root_len must be under 200")]
+    UriCombinedMaxLengthMustBeUnder200,
 }

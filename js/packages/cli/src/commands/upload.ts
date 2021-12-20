@@ -35,6 +35,11 @@ export async function uploadV2({
   price,
   treasuryWallet,
   splToken,
+  uriPrefixLen,
+  uriPrefix,
+  maxUriRootLen,
+  uriSuffixLen,
+  uriSuffix,
   gatekeeper,
   goLiveDate,
   endSettings,
@@ -58,6 +63,11 @@ export async function uploadV2({
   price: BN;
   treasuryWallet: PublicKey;
   splToken: PublicKey;
+  uriPrefixLen: null | number;
+  uriPrefix: string;
+  maxUriRootLen: null | number;
+  uriSuffixLen: null | number;
+  uriSuffix: string;
   gatekeeper: null | {
     expireOnUse: boolean;
     gatekeeperNetwork: web3.PublicKey;
@@ -84,8 +94,20 @@ export async function uploadV2({
   const savedContent = loadCache(cacheName, env);
   const cacheContent = savedContent || {};
 
+  if (!cacheContent.items) {
+    cacheContent.items = {};
+  }
+
   if (!cacheContent.program) {
     cacheContent.program = {};
+  }
+
+  if (!cacheContent.uriSuffix) {
+    cacheContent.uriSuffix = uriSuffix;
+  }
+
+  if (!cacheContent.uriSuffix) {
+    cacheContent.uriPrefix = uriPrefix;
   }
 
   const dedupedAssetKeys = getAssetKeysNeedingUpload(cacheContent.items, files);
@@ -139,6 +161,11 @@ export async function uploadV2({
             isMutable: mutable,
             maxSupply: new BN(0),
             retainAuthority: retainAuthority,
+            uriPrefixLen: uriPrefixLen,
+            uriPrefix: uriPrefix,
+            maxUriRootLen: maxUriRootLen,
+            uriSuffixLen: uriSuffixLen,
+            uriSuffix: uriSuffix,
             gatekeeper,
             goLiveDate,
             price,
@@ -250,6 +277,11 @@ export async function uploadV2({
                     isMutable: mutable,
                     maxSupply: new BN(0),
                     retainAuthority: retainAuthority,
+                    uriPrefixLen: uriPrefixLen,
+                    uriPrefix: uriPrefix,
+                    maxUriRootLen: maxUriRootLen,
+                    uriSuffixLen: uriSuffixLen,
+                    uriSuffix: uriSuffix,
                     gatekeeper,
                     goLiveDate,
                     price,

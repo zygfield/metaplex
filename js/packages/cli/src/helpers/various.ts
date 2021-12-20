@@ -26,6 +26,11 @@ export async function getCandyMachineV2Config(
   price: BN;
   treasuryWallet: web3.PublicKey;
   splToken: web3.PublicKey | null;
+  uriPrefixLen: null | number;
+  uriPrefix: string;
+  maxUriRootLen: number;
+  uriSuffixLen: null | number;
+  uriSuffix: string;
   gatekeeper: null | {
     expireOnUse: boolean;
     gatekeeperNetwork: web3.PublicKey;
@@ -62,6 +67,11 @@ export async function getCandyMachineV2Config(
     batchSize,
     price,
     splToken,
+    uriPrefixLen,
+    uriPrefix,
+    maxUriRootLen,
+    uriSuffixLen,
+    uriSuffix,
     splTokenAccount,
     solTreasuryAccount,
     gatekeeper,
@@ -182,6 +192,11 @@ export async function getCandyMachineV2Config(
     price: new BN(parsedPrice),
     treasuryWallet: wallet,
     splToken: splToken ? new web3.PublicKey(splToken) : null,
+    uriPrefixLen,
+    uriPrefix,
+    maxUriRootLen,
+    uriSuffixLen,
+    uriSuffix,
     gatekeeper,
     endSettings,
     hiddenSettings,

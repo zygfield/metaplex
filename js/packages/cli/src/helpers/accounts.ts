@@ -89,6 +89,11 @@ export interface CandyMachineData {
   maxSupply: anchor.BN;
   price: anchor.BN;
   retainAuthority: boolean;
+  uriPrefixLen: null | number;
+  uriPrefix: string;
+  maxUriRootLen: null | number;
+  uriSuffixLen: null | number;
+  uriSuffix: string;
   gatekeeper: null | {
     expireOnUse: boolean;
     gatekeeperNetwork: web3.PublicKey;
