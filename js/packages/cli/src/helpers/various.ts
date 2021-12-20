@@ -28,7 +28,7 @@ export async function getCandyMachineV2Config(
   splToken: web3.PublicKey | null;
   uriPrefixLen: null | number;
   uriPrefix: string;
-  maxUriRootLen: number;
+  maxUriRootLen: null | number;
   uriSuffixLen: null | number;
   uriSuffix: string;
   gatekeeper: null | {
