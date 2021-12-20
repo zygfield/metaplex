@@ -218,7 +218,6 @@ export async function createConfigAccount(
     configData.maxNumberOfLines.toNumber() * CONFIG_LINE_SIZE +
     4 +
     Math.ceil(configData.maxNumberOfLines.toNumber() / 8);
-
   return anchor.web3.SystemProgram.createAccount({
     fromPubkey: payerWallet,
     newAccountPubkey: configAccount,
@@ -243,7 +242,7 @@ export async function createCandyMachineV2Account(
     candyData.itemsAvailable.toNumber() * candyData.maxUriRootLen +
     8 +
     2 * (Math.floor(candyData.itemsAvailable.toNumber() / 8) + 1);
-
+  console.log(JSON.stringify(candyData));
   return anchor.web3.SystemProgram.createAccount({
     fromPubkey: payerWallet,
     newAccountPubkey: candyAccount,

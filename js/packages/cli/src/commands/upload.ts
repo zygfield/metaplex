@@ -94,6 +94,13 @@ export async function uploadV2({
   const savedContent = loadCache(cacheName, env);
   const cacheContent = savedContent || {};
 
+  if (!uriPrefix) {
+    uriPrefix = '';
+  }
+  if (!uriSuffix) {
+    uriSuffix = '';
+  }
+
   if (!cacheContent.items) {
     cacheContent.items = {};
   }
@@ -106,7 +113,7 @@ export async function uploadV2({
     cacheContent.uriSuffix = uriSuffix;
   }
 
-  if (!cacheContent.uriSuffix) {
+  if (!cacheContent.uriPrefix) {
     cacheContent.uriPrefix = uriPrefix;
   }
 

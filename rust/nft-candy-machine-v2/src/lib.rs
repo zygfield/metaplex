@@ -620,7 +620,7 @@ pub mod nft_candy_machine_v2 {
     }
 }
 
-fn get_space_for_candy(data: CandyMachineData,) -> core::result::Result<usize, ProgramError> {
+fn get_space_for_candy(data: CandyMachineData) -> core::result::Result<usize, ProgramError> {
     let num = if data.hidden_settings.is_some() {
         CONFIG_ARRAY_START
     } else {
