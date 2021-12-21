@@ -31,6 +31,9 @@ export async function getCandyMachineV2Config(
   maxUriRootLen: null | number;
   uriSuffixLen: null | number;
   uriSuffix: string;
+  namePrefixLen: null | number;
+  namePrefix: String;
+  maxNameRootLen: null | number;
   gatekeeper: null | {
     expireOnUse: boolean;
     gatekeeperNetwork: web3.PublicKey;
@@ -72,6 +75,9 @@ export async function getCandyMachineV2Config(
     maxUriRootLen,
     uriSuffixLen,
     uriSuffix,
+    namePrefixLen,
+    namePrefix,
+    maxNameRootLen,
     splTokenAccount,
     solTreasuryAccount,
     gatekeeper,
@@ -197,6 +203,9 @@ export async function getCandyMachineV2Config(
     maxUriRootLen,
     uriSuffixLen,
     uriSuffix,
+    namePrefixLen,
+    namePrefix,
+    maxNameRootLen,
     gatekeeper,
     endSettings,
     hiddenSettings,

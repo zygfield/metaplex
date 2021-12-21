@@ -72,25 +72,20 @@ export const CONFIG_ARRAY_START_V2 =
   32 + // authority
   32 + //wallet
   33 + // token mint
-  4 +
-  6 + // uuid
+  4 + 6 + // uuid
   8 + // price
   8 + // items available
   9 + // go live
   10 + // end settings
-  4 +
-  MAX_SYMBOL_LENGTH + // u32 len + symbol
+  4 + MAX_SYMBOL_LENGTH + // u32 len + symbol
   2 + // seller fee basis points
-  4 +
-  MAX_CREATOR_LIMIT * MAX_CREATOR_LEN + // optional + u32 len + actual vec
+  4 + MAX_CREATOR_LIMIT * MAX_CREATOR_LEN + // optional + u32 len + actual vec
   8 + //max supply
   1 + // is mutable
   1 + // retain authority
   1 + // option for hidden setting
-  4 +
-  MAX_NAME_LENGTH + // name length,
-  4 +
-  MAX_URI_LENGTH + // uri length,
+  4 + MAX_NAME_LENGTH + // name length,
+  4 + MAX_URI_LENGTH + // uri length,
   32 + // hash
   4 + // max number of lines;
   8 + // items redeemed
@@ -99,6 +94,14 @@ export const CONFIG_ARRAY_START_V2 =
   1 + // allow presale
   9 + // discount price
   32 + // mint key for whitelist
+  2 + // uri prefix len
+  4 + MAX_URI_LENGTH + // uri prefix
+  2 + // max uri root len
+  2 + // uri suffix len
+  4 + MAX_URI_LENGTH + // uri suffix string
+  2 + // max name root len option
+  2 + // uri prefix length option
+  4 + MAX_URI_LENGTH + // uri prefix string
   1 +
   32 +
   1; // gatekeeper

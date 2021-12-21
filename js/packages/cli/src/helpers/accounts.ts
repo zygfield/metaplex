@@ -94,6 +94,9 @@ export interface CandyMachineData {
   maxUriRootLen: null | number;
   uriSuffixLen: null | number;
   uriSuffix: string;
+  namePrefixLen: null | number;
+  namePrefix: String;
+  maxNameRootLen: null | number;
   gatekeeper: null | {
     expireOnUse: boolean;
     gatekeeperNetwork: web3.PublicKey;

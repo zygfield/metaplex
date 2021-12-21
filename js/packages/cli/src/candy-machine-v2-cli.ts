@@ -94,6 +94,9 @@ programCommand('upload')
       maxUriRootLen,
       uriSuffixLen,
       uriSuffix,
+      namePrefixLen,
+      namePrefix,
+      maxNameRootLen,
       treasuryWallet,
       gatekeeper,
       endSettings,
@@ -207,6 +210,9 @@ programCommand('upload')
         maxUriRootLen,
         uriSuffixLen,
         uriSuffix,
+        namePrefixLen,
+        namePrefix,
+        maxNameRootLen,
         endSettings,
         hiddenSettings,
         whitelistMintSettings,
@@ -380,11 +386,11 @@ programCommand('verify')
 
             const thisSlice = candyMachine.data.slice(
               CONFIG_ARRAY_START_V2 +
-                4 +
-                CONFIG_LINE_SIZE_V2 * allIndexesInSlice[i],
+              4 +
+              CONFIG_LINE_SIZE_V2 * allIndexesInSlice[i],
               CONFIG_ARRAY_START_V2 +
-                4 +
-                CONFIG_LINE_SIZE_V2 * (allIndexesInSlice[i] + 1),
+              4 +
+              CONFIG_LINE_SIZE_V2 * (allIndexesInSlice[i] + 1),
             );
             const name = fromUTF8Array([...thisSlice.slice(2, 34)]);
             const uri = fromUTF8Array([...thisSlice.slice(40, 240)]);
@@ -511,14 +517,12 @@ programCommand('verify')
     );
 
     log.info(
-      `uploaded (${lineCount.toNumber()}) out of (${
-        candyMachineObj.data.itemsAvailable
+      `uploaded (${lineCount.toNumber()}) out of (${candyMachineObj.data.itemsAvailable
       })`,
     );
     if (candyMachineObj.data.itemsAvailable > lineCount.toNumber()) {
       throw new Error(
-        `predefined number of NFTs (${
-          candyMachineObj.data.itemsAvailable
+        `predefined number of NFTs (${candyMachineObj.data.itemsAvailable
         }) is smaller than the uploaded one (${lineCount.toNumber()})`,
       );
     } else {
@@ -623,7 +627,7 @@ programCommand('show')
         //@ts-ignore
         machine.data.goLiveDate
           ? //@ts-ignore
-            new Date(machine.data.goLiveDate * 1000)
+          new Date(machine.data.goLiveDate * 1000)
           : 'N/A',
       );
       //@ts-ignore

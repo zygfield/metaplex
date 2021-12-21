@@ -40,6 +40,9 @@ export async function uploadV2({
   maxUriRootLen,
   uriSuffixLen,
   uriSuffix,
+  namePrefixLen,
+  namePrefix,
+  maxNameRootLen,
   gatekeeper,
   goLiveDate,
   endSettings,
@@ -68,6 +71,9 @@ export async function uploadV2({
   maxUriRootLen: null | number;
   uriSuffixLen: null | number;
   uriSuffix: string;
+  namePrefixLen: null | number;
+  namePrefix: String;
+  maxNameRootLen: null | number;
   gatekeeper: null | {
     expireOnUse: boolean;
     gatekeeperNetwork: web3.PublicKey;
@@ -99,6 +105,9 @@ export async function uploadV2({
   }
   if (!uriSuffix) {
     uriSuffix = '';
+  }
+  if (!namePrefix) {
+    namePrefix = '';
   }
 
   if (!cacheContent.items) {
@@ -173,6 +182,9 @@ export async function uploadV2({
             maxUriRootLen: maxUriRootLen,
             uriSuffixLen: uriSuffixLen,
             uriSuffix: uriSuffix,
+            namePrefixLen,
+            namePrefix,
+            maxNameRootLen,
             gatekeeper,
             goLiveDate,
             price,
@@ -289,6 +301,9 @@ export async function uploadV2({
                     maxUriRootLen: maxUriRootLen,
                     uriSuffixLen: uriSuffixLen,
                     uriSuffix: uriSuffix,
+                    namePrefixLen: namePrefixLen,
+                    namePrefix: namePrefix,
+                    maxNameRootLen: maxNameRootLen,
                     gatekeeper,
                     goLiveDate,
                     price,
