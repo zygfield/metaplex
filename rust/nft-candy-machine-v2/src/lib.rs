@@ -419,26 +419,29 @@ pub mod nft_candy_machine_v2 {
 
         let mut config_line_size: usize = CONFIG_LINE_SIZE;
         let mut max_uri_length: usize = MAX_URI_LENGTH;
+        let mut max_name_length: usize = MAX_NAME_LENGTH;
         if let Some(max_len) = candy_machine.data.max_uri_root_len {
             max_uri_length = max_len as usize;
-            config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + (max_len as usize);
+            config_line_size = config_line_size - MAX_URI_LENGTH + (max_len as usize);
+        }
+        if let Some(max_len) = candy_machine.data.max_name_root_len {
+            max_name_length = max_len as usize;
+            config_line_size = config_line_size - MAX_NAME_LENGTH + (max_len as usize);
         }
 
         for line in &config_lines {
             let mut array_of_zeroes = vec![];
-            while array_of_zeroes.len() < MAX_NAME_LENGTH - line.name.len() {
+            while array_of_zeroes.len() < max_name_length - line.name.len() {
                 array_of_zeroes.push(0u8);
             }
             let name = line.name.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
-
-            // Max URI length is 200 so no risk here.
-            let uri_len: u8 = line.uri.len() as u8;
+        
             let mut array_of_zeroes = vec![];
             while array_of_zeroes.len() < max_uri_length - line.uri.len() {
                 array_of_zeroes.push(0u8);
             }
             let uri = line.uri.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
-            fixed_config_lines.push(ConfigLine { name, uri, uri_len })
+            fixed_config_lines.push(ConfigLine { name, uri })
         }
 
         let as_vec = fixed_config_lines.try_to_vec()?;
@@ -505,7 +508,10 @@ pub mod nft_candy_machine_v2 {
         let candy_machine_account = &mut ctx.accounts.candy_machine;
         let mut config_line_size: usize = CONFIG_LINE_SIZE;
         if let Some(max_len) = data.max_uri_root_len {
-            config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + max_len as usize;
+            config_line_size = config_line_size - MAX_URI_LENGTH + max_len as usize;
+        }
+        if let Some(max_len) = data.max_name_root_len {
+            config_line_size = config_line_size - MAX_NAME_LENGTH + max_len as usize;
         }
 
         if config_line_size > CONFIG_LINE_SIZE {
@@ -546,6 +552,8 @@ pub mod nft_candy_machine_v2 {
         let new_symbol =
             candy_machine.data.symbol.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
         candy_machine.data.symbol = new_symbol;
+
+
         let mut array_of_zeroes = vec![];
         while array_of_zeroes.len() < MAX_URI_LENGTH - candy_machine.data.uri_prefix.len() {
             array_of_zeroes.push(0u8);
@@ -626,7 +634,10 @@ fn get_space_for_candy(data: CandyMachineData) -> core::result::Result<usize, Pr
     } else {
         let mut config_line_size = CONFIG_LINE_SIZE;
         if let Some(max_len) = data.max_uri_root_len {
-            config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + (max_len as usize);
+            config_line_size = config_line_size - MAX_URI_LENGTH + (max_len as usize);
+        }
+        if let Some(max_len) = data.max_name_root_len {
+            config_line_size = config_line_size - MAX_NAME_LENGTH + (max_len as usize);
         }
         CONFIG_ARRAY_START
             + 4
@@ -782,6 +793,9 @@ pub struct CandyMachineData {
     // Can't use .len() since we pad with null.
     pub uri_suffix_len: Option<u8>,
     pub uri_suffix: String,
+    pub name_prefix_len: Option<u8>,
+    pub name_prefix: String,
+    pub max_name_root_len: Option<u8>,
     /// If [`Some`] requires gateway tokens on mint
     pub gatekeeper: Option<GatekeeperConfig>,
 }
@@ -839,6 +853,9 @@ pub const CONFIG_ARRAY_START: usize = 8 + // key
 2 + // optional uri_suffix_len
 2 + // optional uri_root_len
 4 + MAX_URI_LENGTH + // uri suffix
+2 + // optional name_prefix_len
+4 + MAX_NAME_LENGTH + // name prefix
+2 + // optional name_root_len
 1 + 32 + 1 // gatekeeper
 ;
 
@@ -939,7 +956,6 @@ pub fn get_config_line<'info>(
         return Ok(ConfigLine {
             name: hs.name.clone() + "#" + &(mint_number + 1).to_string(),
             uri: hs.uri.clone(),
-            uri_len: 200,
         });
     }
     msg!("Index is set to {:?}", index);
@@ -948,9 +964,14 @@ pub fn get_config_line<'info>(
     let mut arr = a_info.data.borrow_mut();
     let mut config_line_size: usize = CONFIG_LINE_SIZE;
     let mut max_uri_length: usize = MAX_URI_LENGTH;
+    let mut max_name_length: usize = MAX_NAME_LENGTH;
     if let Some(max_len) = a.data.max_uri_root_len {
         max_uri_length = max_len as usize;
-        config_line_size = CONFIG_LINE_SIZE - MAX_URI_LENGTH + max_len as usize;
+        config_line_size = config_line_size - MAX_URI_LENGTH + max_len as usize;
+    }
+    if let Some(max_len) = a.data.max_name_root_len {
+        max_name_length = max_len as usize;
+        config_line_size = config_line_size - MAX_NAME_LENGTH + max_len as usize;
     }
     // let (mut index_to_use, good) = get_good_index(
     //     &mut arr,
@@ -986,16 +1007,19 @@ pub fn get_config_line<'info>(
     let data_array = &mut arr[CONFIG_ARRAY_START + 4 + index_to_use * (config_line_size)
         ..CONFIG_ARRAY_START + 4 + (index_to_use + 1) * (config_line_size)];
 
+
+    //[config_array_start][[4][name][null till length]][[4][uri][null til end]]
     let mut name_vec = vec![];
     let mut uri_vec = vec![];
-    for i in 4..4 + MAX_NAME_LENGTH {
+    for i in 4..4 + max_name_length {
         if data_array[i] == 0 {
             break;
         }
         name_vec.push(data_array[i])
     }
+    //[[4][name][null till length]][[4][uri][null til end]]
 
-    for i in 8 + MAX_NAME_LENGTH..8 + MAX_NAME_LENGTH + max_uri_length {
+    for i in 8 + max_name_length..8 + max_name_length + max_uri_length {
         if data_array[i] == 0 {
             break;
         }
@@ -1010,7 +1034,7 @@ pub fn get_config_line<'info>(
             Ok(val) => String::from(val),
             Err(_) => return Err(ErrorCode::InvalidString.into()),
         };
-        uri.push_str(&uri_root.as_str()[0..data_array[data_array.len() - 1] as usize]);
+        uri.push_str(&uri_root.as_str());
         if let Some(suffix_len) = a.data.uri_suffix_len {
             uri.push_str(&a.data.uri_suffix.clone().as_str()[..suffix_len as usize]);
         }
@@ -1020,25 +1044,37 @@ pub fn get_config_line<'info>(
             Err(_) => return Err(ErrorCode::InvalidString.into()),
         };
     }
-    let config_line: ConfigLine = ConfigLine {
-        name: match String::from_utf8(name_vec) {
+
+    let mut name = String::from("");
+    if max_name_length < MAX_NAME_LENGTH {
+        if let Some(prefix_len) = a.data.name_prefix_len {
+            name.push_str(&a.data.name_prefix.clone().as_str()[..prefix_len as usize]);
+        }
+        let name_root = match String::from_utf8(name_vec) {
+            Ok(val) => String::from(val),
+            Err(_) => return Err(ErrorCode::InvalidString.into()),
+        };
+        name.push_str(&name_root.as_str());
+    } else {
+        name = match String::from_utf8(name_vec) {
             Ok(val) => val,
             Err(_) => return Err(ErrorCode::InvalidString.into()),
-        },
+        };
+    }
+    let config_line: ConfigLine = ConfigLine {
+        name: name,
         uri: uri,
-        uri_len: data_array[data_array.len() - 1],
     };
 
     Ok(config_line)
 }
 
-pub const CONFIG_LINE_SIZE: usize = 4 + MAX_NAME_LENGTH + 4 + MAX_URI_LENGTH + 1;
+pub const CONFIG_LINE_SIZE: usize = 4 + MAX_NAME_LENGTH + 4 + MAX_URI_LENGTH;
 #[derive(AnchorSerialize, AnchorDeserialize, Debug)]
 pub struct ConfigLine {
     pub name: String,
     /// URI pointing to JSON representing the asset
     pub uri: String,
-    pub uri_len: u8,
 }
 
 // Unfortunate duplication of token metadata so that IDL picks it up.
