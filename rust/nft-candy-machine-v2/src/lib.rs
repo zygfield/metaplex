@@ -973,27 +973,26 @@ pub fn get_config_line<'info>(
         max_name_length = max_len as usize;
         config_line_size = config_line_size - MAX_NAME_LENGTH + max_len as usize;
     }
-    // let (mut index_to_use, good) = get_good_index(
-    //     &mut arr,
-    //     a.data.items_available as usize,
-    //     index,
-    //     true,
-    //     config_line_size,
-    // )?;
-    // if !good {
-    //     let (index_to_use_new, good_new) = get_good_index(
-    //         &mut arr,
-    //         a.data.items_available as usize,
-    //         index,
-    //         false,
-    //         config_line_size,
-    //     )?;
-    //     index_to_use = index_to_use_new;
-    //     if !good_new {
-    //         return Err(ErrorCode::CannotFindUsableConfigLine.into());
-    //     }
-    // }
-    let index_to_use = index;
+    let (mut index_to_use, good) = get_good_index(
+        &mut arr,
+        a.data.items_available as usize,
+        index,
+        true,
+        config_line_size,
+    )?;
+    if !good {
+        let (index_to_use_new, good_new) = get_good_index(
+            &mut arr,
+            a.data.items_available as usize,
+            index,
+            false,
+            config_line_size,
+        )?;
+        index_to_use = index_to_use_new;
+        if !good_new {
+            return Err(ErrorCode::CannotFindUsableConfigLine.into());
+        }
+    }
 
     msg!(
         "Index actually ends up due to used bools {:?}",
